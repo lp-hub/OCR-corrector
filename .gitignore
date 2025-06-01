@@ -1,0 +1,57 @@
+# Ignore Python cache
+.pytest_cache/
+.mypy_cache/
+__pypackages__/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Logs and runtime
+.tmp_sync/
+logs/
+*.log
+
+# Local config / secrets
+scripts/
+.env
+*.secret
+*.key
+
+# FAISS / vector store
+db/
+*.faiss
+index.faiss
+
+# SQLite / local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# LangChain
+.langchain/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# Editor/IDE metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System-specific files
+.DS_Store
+Thumbs.db
+
+# Build / dist
+build/
+dist/
+*.egg-info/
