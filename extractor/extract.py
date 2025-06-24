@@ -3,8 +3,8 @@ import re
 import sys
 from pathlib import Path
 from datetime import datetime
-# python3 extract/extractor.py
-from extractor.loaders import detect_and_load_text
+# python3 src/extract/extract.py
+from loaders import detect_and_load_text
 from ocr import perform_ocr_workflow
 from dotenv import load_dotenv
 load_dotenv()
@@ -68,48 +68,52 @@ def main():
     files_processed = 0
     processed_files = get_already_processed()
     new_log_entries = []
+    try:
+        for file_path in SRC_DIR.rglob("*"):
+            if not file_path.is_file():
+                continue
+            
+            original_filename = file_path.name  # e.g. "book.pdf"
+    
+            if original_filename in processed_files:
+                print(f"[SKIP] Already extracted: {file_path}")
+                continue
+            
+            docs = detect_and_load_text(str(file_path))
+            if not docs:
+                continue
+            
+            # Join all pages into one text blob
+            text = "\n\n".join(doc.page_content for doc in docs)
+    
+            # Save extracted text with timestamp suffix
+            target_dir = DST_DIR / file_path.relative_to(SRC_DIR).parent
+            target_dir.mkdir(parents=True, exist_ok=True)
+    
+            new_filename = f"{original_filename}.txt" # comment if you need TIMESTAMP and uncomment next line
+            # new_filename = f"{original_filename}_{timestamp}.txt"  # book.pdf_20250524_153012.txt 
+            target_path = target_dir / new_filename
+    
+            with target_path.open("w", encoding="utf-8") as f:
+                f.write(text)
+    
+            print(f"[EXTRACTED] {file_path} → {target_path}")
+            files_processed += 1
+            new_log_entries.append(original_filename)
+    
+    except KeyboardInterrupt:
+        print("\n[INTERRUPTED] Gracefully handling Ctrl+C...")
+    except Exception as e:
+        print(f"[ERROR] Unexpected error during processing: {e}")
+    finally:
+        if new_log_entries:
+            LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with LOG_FILE.open("a", encoding="utf-8") as log_f:
+                for entry in new_log_entries:
+                    log_f.write(f"{entry}\n")
+            print(f"[LOG] Wrote {len(new_log_entries)} new entries to log file: {LOG_FILE}")
 
-    for file_path in SRC_DIR.rglob("*"):
-        if not file_path.is_file():
-            continue
-
-        original_filename = file_path.name  # e.g. "book.pdf"
-
-        if original_filename in processed_files:
-            print(f"[SKIP] Already extracted: {file_path}")
-            continue
-
-        docs = detect_and_load_text(str(file_path))
-        if not docs:
-            continue
-
-        # Join all pages into one text blob
-        text = "\n\n".join(doc.page_content for doc in docs)
-
-        # Save extracted text with timestamp suffix
-        target_dir = DST_DIR / file_path.relative_to(SRC_DIR).parent
-        target_dir.mkdir(parents=True, exist_ok=True)
-
-        new_filename = f"{original_filename}.txt" # comment if you need TIMESTAMP and uncomment next line
-        # new_filename = f"{original_filename}_{timestamp}.txt"  # book.pdf_20250524_153012.txt 
-        target_path = target_dir / new_filename
-
-        with target_path.open("w", encoding="utf-8") as f:
-            f.write(text)
-
-        print(f"[EXTRACTED] {file_path} → {target_path}")
-        files_processed += 1
-        new_log_entries.append(original_filename)
-
-    # Append to log
-    if new_log_entries:
-        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with LOG_FILE.open("a", encoding="utf-8") as log_f:
-            for entry in new_log_entries:
-                log_f.write(f"{entry}\n")
-        print(f"[LOG] Writing {len(new_log_entries)} new entries to log file: {LOG_FILE}")
-
-    print(f"[DONE] Extracted text from {files_processed} files.")
+        print(f"[DONE] Extracted text from {files_processed} files.")
 
 if __name__ == "__main__":
     initialize_log_from_existing_outputs()
