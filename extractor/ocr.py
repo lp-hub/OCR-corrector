@@ -4,7 +4,7 @@ import os
 import pytesseract
 import re
 import subprocess
-# PYTHONPATH=./src python extractor/ocr.py
+# PYTHONPATH=./src python scripts/ocr.py
 from pathlib import Path
 from PIL import Image
 from dotenv import load_dotenv
