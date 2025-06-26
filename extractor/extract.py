@@ -3,9 +3,9 @@ import re
 import sys
 from pathlib import Path
 from datetime import datetime
-# python3 src/extract/extract.py
-from loaders import detect_and_load_text
-from ocr import perform_ocr_workflow
+# python3 ocr/extractor/extract.py
+from extractor.loaders import detect_and_load_text
+from extractor.ocr import perform_ocr_workflow
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -124,8 +124,7 @@ if __name__ == "__main__":
    OCR only proceeds:
    if .env flag is true,
    and the user confirms at the prompt.
-'''
-'''
+
 First run: populates log and skips extracted files.
 Second run: nothing duplicated.
 LOG_FILE acts as ground truth.
