@@ -18,7 +18,7 @@ from unstructured.partition.html import partition_html
 
 # ========== .txt loader ==========
 class SafeTextLoader(TextLoader):
-    def __init__(self, file_path):        
+    def __init__(self, file_path):
         super().__init__(file_path, encoding=None, autodetect_encoding=True)
         # super().__init__(file_path, encoding='utf-8', autodetect_encoding=False)
 
@@ -47,7 +47,7 @@ class DidjvuLoader:
     def load(self) -> list[Document]:
         if not shutil.which("djvutxt"):
             raise EnvironmentError("djvutxt is not installed. sudo apt install djvulibre-bin")
-        
+
         djvu_path = Path(self.file_path)
 
         if not djvu_path.exists():
@@ -67,7 +67,7 @@ class DidjvuLoader:
             raise RuntimeError(f"djvutxt failed: {e.stderr}")
 
         return [Document(page_content=full_text)]
-        
+
 # ========== .chm loader using extract_chmlib ==========
 class CHMLoader:
     def __init__(self, file_path):
@@ -77,7 +77,7 @@ class CHMLoader:
         extract_dir = Path("/tmp/chm_extract")
         extract_dir.mkdir(parents=True, exist_ok=True)
         print(f"[DEBUG] Extracting CHM file {self.file_path} to {extract_dir}")
-        
+
         subprocess.run(["extract_chmLib", self.file_path, str(extract_dir)])
         text = ""
         for html_file in extract_dir.rglob("*.htm*"):
@@ -85,7 +85,7 @@ class CHMLoader:
                 text += f.read() + "\n"
         print(f"[DEBUG] Finished extracting CHM, total length {len(text)} chars")
         return [Document(page_content=text)]
-        
+
 # Some .chm files can't be parsed well because they're binary-encoded archives.
 #     Extract .chm manually:
 # archmage mybook.chm output_dir/
@@ -160,7 +160,7 @@ class BlogspotXMLLoader:
             if tag.startswith("{"):
                 return tag.split("}", 1)[1]
             return tag
-        
+
         try:
             for event, elem in ET.iterparse(file_path, events=("start",)):
                 if localname(elem.tag) == "feed":
@@ -176,7 +176,7 @@ class BlogspotXMLLoader:
 
     def load(self) -> list[Document]:
         tree = ET.parse(self.file_path)
-        root = tree.getroot()        
+        root = tree.getroot()
 
         ns = {
             "atom": "http://www.w3.org/2005/Atom"
@@ -194,12 +194,12 @@ class BlogspotXMLLoader:
             # --- Apply tag filter if defined ---
             if self.tags_filter:
                 if not normalized_tags & normalized_filter:
-                    continue                
+                    continue
             # --- Ensure this is a real blog post ---
             if not any(tag.endswith("#post") for tag in tags):
                 print(f"[MATCH] Tags: {tags} → matched: {normalized_tags & normalized_filter}")
                 continue
-            
+
             # if kind is not None and kind.attrib.get("term", "").endswith("#post"):
             title_el = entry.find("atom:title", ns)
             content_el = entry.find("atom:content", ns)
@@ -277,23 +277,23 @@ def detect_and_load_text(file_path: str, pdf_password: str = None) -> list[Docum
         elif BlogspotXMLLoader.is_blogspot_export(file_path):
             raw_tags = os.getenv("TAGS", "")
             tags_filter = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
-            loader = BlogspotXMLLoader(file_path, tags_filter=tags_filter)            
+            loader = BlogspotXMLLoader(file_path, tags_filter=tags_filter)
         else:
             print(f"[INFO] .xml file not recognized as WordPress or Blogspot export: {file_path}")
             return []
-        
+
     else:
         loader_map = {
-        # ".pdf": PyPDFLoaderWithPassword, # PyPDFLoader replaced to fix pypdf/_encryption.py        
-        ".md": UnstructuredMarkdownLoader,        
+        # ".pdf": PyPDFLoaderWithPassword, # PyPDFLoader replaced to fix pypdf/_encryption.py
+        ".md": UnstructuredMarkdownLoader,
         ".epub": FixedEPubLoader,  # UnstructuredEPubLoader replaced to globally fix .epub loading
         ".mobi": MOBILoader,  # custom MOBI loader using Calibre conversion
         ".chm": CHMLoader,
         ".docx": UnstructuredWordDocumentLoader,
         ".doc": UnstructuredDocLoader,
         ".rtf": RTFLoader,
-        ".txt": SafeTextLoader,        
-        ".djvu": DidjvuLoader,        
+        ".txt": SafeTextLoader,
+        ".djvu": DidjvuLoader,
         ".html": UnstructuredHTMLLoader,
         ".htm": UnstructuredHTMLLoader,
         }
